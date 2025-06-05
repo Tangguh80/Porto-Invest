@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Investment Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
+    <script src="https://kit.fontawesome.com/your-code-here.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .positive {
+            color: #10B981;
+        }
+        .negative {
+            color: #EF4444;
+        }
+        .neutral {
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-center text-indigo-700 mb-2">Stock Investment Tracker</h1>
+            <p class="text-center text-gray-600 max-w-2xl mx-auto">Track your stock portfolio performance with real-time indicators and interactive charts</p>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Performance Indicators -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-700">Indikator Kinerja</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span>Presentase Kenaikan</span>
+                        <span id="increasePercentage" class="font-bold positive">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Presentase Penurunan</span>
+                        <span id="decreasePercentage" class="font-bold negative">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Total Keuntungan</span>
+                        <span id="totalProfit" class="font-bold positive">Rp0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Total Kerugian</span>
+                        <span id="totalLoss" class="font-bold negative">Rp0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investment Form -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-700">Tambah Investasi Baru</h2>
+                <form id="investmentForm" class="space-y-4">
+                    <div>
+                        <label for="companyName" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                        <input type="text" id="companyName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="initialInvestment" class="block text-sm font-medium text-gray-700 mb-1">Investasi Awal (Rp)</label>
+                        <input type="text" id="initialInvestment" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required oninput="formatNumberInput(this)">
+                    </div>
+                    <div>
+                        <label for="currentValue" class="block text-sm font-medium text-gray-700 mb-1">Nilai Saham Saat Ini (Rp)</label>
+                        <input type="text" id="currentValue" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required oninput="formatNumberInput(this)">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-200 flex items-center justify-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Add Investment
+                    </button>
+                </form>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-700">Ringkasan Portofolio</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span>Total Investments</span>
+                        <span id="totalInvestments" class="font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Total Value</span>
+                        <span id="totalPortfolioValue" class="font-bold">$0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Net Gain/Loss</span>
+                        <span id="netGainLoss" class="font-bold neutral">$0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Overall Performance</span>
+                        <span id="overallPerformance" class="font-bold neutral">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-indigo-700">Investment Performance Chart</h2>
+                <div class="flex space-x-2">
+                    <button id="barChartBtn" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm">Bar</button>
+                    <button id="lineChartBtn" class="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm">Line</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-indigo-700">Edit Investment</h2>
+                    <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="editInvestmentForm" class="space-y-4">
+                    <input type="hidden" id="editId">
+                    <div>
+                        <label for="editCompanyName" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                        <input type="text" id="editCompanyName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="editInitialInvestment" class="block text-sm font-medium text-gray-700 mb-1">Initial Investment (Rp)</label>
+                        <input type="text" id="editInitialInvestment" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required oninput="formatNumberInput(this)">
+                    </div>
+                    <div>
+                        <label for="editCurrentValue" class="block text-sm font-medium text-gray-700 mb-1">Current Value (Rp)</label>
+                        <input type="text" id="editCurrentValue" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required oninput="formatNumberInput(this)">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-200">
+                        Update Investment
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Investment Table -->
+        <div class="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Investment Portfolio</h2>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Investment</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="investmentTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Investments will be added here dynamically -->
+                    <tr id="noInvestmentsRow">
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No investments added yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const form = document.getElementById('investmentForm');
+        const tableBody = document.getElementById('investmentTableBody');
+        const noInvestmentsRow = document.getElementById('noInvestmentsRow');
+        const performanceChartEl = document.getElementById('performanceChart');
+        const barChartBtn = document.getElementById('barChartBtn');
+        const lineChartBtn = document.getElementById('lineChartBtn');
+
+        // Initialize chart
+        let performanceChart;
+        let chartType = 'line'; // default chart type
+
+        // Investment data
+        let investments = JSON.parse(localStorage.getItem('investments')) || [];
+
+        // Format number to Rupiah
+        function formatRupiah(amount) {
+            return 'Rp' + Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Initialize the app
+        function init() {
+            renderInvestments();
+            updatePerformanceIndicators();
+            renderChart();
+            setupEventListeners();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            form.addEventListener('submit', handleFormSubmit);
+            barChartBtn.addEventListener('click', () => switchChartType('bar'));
+            lineChartBtn.addEventListener('click', () => switchChartType('line'));
+            
+            // Edit modal event listeners
+            document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+            document.getElementById('editInvestmentForm').addEventListener('submit', handleEditFormSubmit);
+        }
+
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const companyName = document.getElementById('companyName').value;
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
+            const currentValue = parseFloat(document.getElementById('currentValue').value);
+            
+            const now = new Date();
+            const dateAdded = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            
+            const newInvestment = {
+                id: Date.now(),
+                companyName,
+                initialInvestment,
+                currentValue,
+                dateAdded
+            };
+            
+            investments.push(newInvestment);
+            saveInvestments();
+            renderInvestments();
+            updatePerformanceIndicators();
+            renderChart();
+            
+            // Reset form
+            form.reset();
+        }
+
+        // Render investments table
+        function renderInvestments() {
+            if (investments.length === 0) {
+                noInvestmentsRow.style.display = '';
+                tableBody.innerHTML = '';
+                tableBody.appendChild(noInvestmentsRow);
+                return;
+            }
+
+            noInvestmentsRow.style.display = 'none';
+            tableBody.innerHTML = '';
+            
+            investments.forEach(investment => {
+                const row = document.createElement('tr');
+                const performance = ((investment.currentValue - investment.initialInvestment) / investment.initialInvestment) * 100;
+                const performanceClass = performance > 0 ? 'positive' : performance < 0 ? 'negative' : 'neutral';
+                const performanceSymbol = performance > 0 ? '▲' : performance < 0 ? '▼' : '◼';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">${investment.companyName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${formatRupiah(investment.initialInvestment)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${formatRupiah(investment.currentValue)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${investment.dateAdded}</td>
+                    <td class="px-6 py-4 whitespace-nowrap ${performanceClass}">
+                        ${performanceSymbol} ${Math.abs(performance).toFixed(2)}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-4">
+                            <button onclick="editInvestment(${investment.id})" class="text-blue-600 hover:text-blue-900" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteInvestment(${investment.id})" class="text-red-600 hover:text-red-900" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Open edit modal
+        function editInvestment(id) {
+            const investment = investments.find(inv => inv.id === id);
+            if (!investment) return;
+
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editId').value = investment.id;
+            document.getElementById('editCompanyName').value = investment.companyName;
+            document.getElementById('editInitialInvestment').value = investment.initialInvestment;
+            document.getElementById('editCurrentValue').value = investment.currentValue;
+        }
+
+        // Handle edit form submission
+        function handleEditFormSubmit(e) {
+            e.preventDefault();
+            
+            const id = parseInt(document.getElementById('editId').value);
+            const companyName = document.getElementById('editCompanyName').value;
+            const initialInvestment = parseFloat(document.getElementById('editInitialInvestment').value);
+            const currentValue = parseFloat(document.getElementById('editCurrentValue').value);
+            
+            const index = investments.findIndex(inv => inv.id === id);
+            if (index !== -1) {
+                investments[index] = {
+                    ...investments[index],
+                    companyName,
+                    initialInvestment,
+                    currentValue
+                };
+                
+                saveInvestments();
+                renderInvestments();
+                updatePerformanceIndicators();
+                renderChart();
+                closeEditModal();
+            }
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // Delete investment
+        function deleteInvestment(id) {
+            investments = investments.filter(investment => investment.id !== id);
+            saveInvestments();
+            renderInvestments();
+            updatePerformanceIndicators();
+            renderChart();
+        }
+
+        // Update performance indicators
+        function updatePerformanceIndicators() {
+            if (investments.length === 0) {
+                resetIndicators();
+                return;
+            }
+
+            // Calculate metrics
+            let increaseCount = 0;
+            let decreaseCount = 0;
+            let totalProfit = 0;
+            let totalLoss = 0;
+            let totalInitial = 0;
+            let totalCurrent = 0;
+
+            investments.forEach(investment => {
+                const profit = investment.currentValue - investment.initialInvestment;
+                
+                if (profit > 0) {
+                    increaseCount++;
+                    totalProfit += profit;
+                } else if (profit < 0) {
+                    decreaseCount++;
+                    totalLoss += Math.abs(profit);
+                }
+                
+                totalInitial += investment.initialInvestment;
+                totalCurrent += investment.currentValue;
+            });
+
+            // Update indicators
+            document.getElementById('increasePercentage').textContent = `${((increaseCount / investments.length) * 100).toFixed(1)}%`;
+            document.getElementById('decreasePercentage').textContent = `${((decreaseCount / investments.length) * 100).toFixed(1)}%`;
+            document.getElementById('totalProfit').textContent = formatRupiah(totalProfit);
+            document.getElementById('totalLoss').textContent = formatRupiah(totalLoss);
+            document.getElementById('totalInvestments').textContent = investments.length;
+            document.getElementById('totalPortfolioValue').textContent = formatRupiah(totalCurrent);
+
+            // Calculate and update net gain/loss
+            const netGainLoss = totalCurrent - totalInitial;
+            const netGainLossEl = document.getElementById('netGainLoss');
+            const overallPerformanceEl = document.getElementById('overallPerformance');
+
+            if (netGainLoss > 0) {
+                netGainLossEl.className = 'font-bold positive';
+                netGainLossEl.textContent = `+$${netGainLoss.toFixed(2)}`;
+            } else if (netGainLoss < 0) {
+                netGainLossEl.className = 'font-bold negative';
+                netGainLossEl.textContent = `-$${Math.abs(netGainLoss).toFixed(2)}`;
+            } else {
+                netGainLossEl.className = 'font-bold neutral';
+                netGainLossEl.textContent = `$${netGainLoss.toFixed(2)}`;
+            }
+
+            // Calculate overall performance
+            const overallPerformance = ((totalCurrent - totalInitial) / totalInitial) * 100;
+            if (overallPerformance > 0) {
+                overallPerformanceEl.className = 'font-bold positive';
+                overallPerformanceEl.textContent = `+${overallPerformance.toFixed(2)}%`;
+            } else if (overallPerformance < 0) {
+                overallPerformanceEl.className = 'font-bold negative';
+                overallPerformanceEl.textContent = `${overallPerformance.toFixed(2)}%`;
+            } else {
+                overallPerformanceEl.className = 'font-bold neutral';
+                overallPerformanceEl.textContent = `${overallPerformance.toFixed(2)}%`;
+            }
+        }
+
+        // Reset indicators when no investments
+        function resetIndicators() {
+            document.getElementById('increasePercentage').textContent = '0%';
+            document.getElementById('decreasePercentage').textContent = '0%';
+            document.getElementById('totalProfit').textContent = '$0';
+            document.getElementById('totalLoss').textContent = '$0';
+            document.getElementById('totalInvestments').textContent = '0';
+            document.getElementById('totalPortfolioValue').textContent = '$0';
+            document.getElementById('netGainLoss').textContent = '$0';
+            document.getElementById('netGainLoss').className = 'font-bold neutral';
+            document.getElementById('overallPerformance').textContent = '0%';
+            document.getElementById('overallPerformance').className = 'font-bold neutral';
+        }
+
+        // Render chart
+        function renderChart() {
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            if (investments.length === 0) {
+                // Show empty state for chart
+                performanceChartEl.style.display = 'none';
+                return;
+            }
+
+            performanceChartEl.style.display = 'block';
+            
+            const companyNames = investments.map(inv => inv.companyName);
+            const initialValues = investments.map(inv => inv.initialInvestment);
+            const currentValues = investments.map(inv => inv.currentValue);
+            const performancePercentages = investments.map(inv => 
+                ((inv.currentValue - inv.initialInvestment) / inv.initialInvestment) * 100
+            );
+
+            const backgroundColors = performancePercentages.map(p => 
+                p > 0 ? 'rgba(16, 185, 129, 0.2)' : p < 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 114, 128, 0.2)'
+            );
+
+            const borderColors = performancePercentages.map(p => 
+                p > 0 ? 'rgba(16, 185, 129, 1)' : p < 0 ? 'rgba(239, 68, 68, 1)' : 'rgba(107, 114, 128, 1)'
+            );
+
+            const datasets = [];
+            
+            if (chartType === 'bar') {
+                datasets.push({
+                    label: 'Initial Investment',
+                    data: initialValues,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 1
+                });
+                
+                datasets.push({
+                    label: 'Current Value',
+                    data: currentValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                });
+            } else {
+                datasets.push({
+                    label: 'Performance %',
+                    data: performancePercentages,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                });
+            }
+
+            performanceChart = new Chart(performanceChartEl, {
+                type: chartType,
+                data: {
+                    labels: companyNames,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: chartType === 'bar',
+                            title: {
+                                display: true,
+                                text: chartType === 'bar' ? 'Amount (Rp)' : 'Performance (%)',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            bodyColor: '#fff',
+                            titleColor: '#fff',
+                            titleFont: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (chartType === 'bar') {
+                                        label += 'Rp' + context.raw.toLocaleString('id-ID');
+                                    } else {
+                                        label += context.raw.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                },
+                                afterLabel: function(context) {
+                                    if (chartType === 'bar') {
+                                        const inv = investments[context.dataIndex];
+                                        const change = inv.currentValue - inv.initialInvestment;
+                                        const percentage = (change / inv.initialInvestment * 100).toFixed(2);
+                                        return [
+                                            `Change: ${change > 0 ? '+' : ''}Rp${change.toLocaleString('id-ID')}`,
+                                            `Performance: ${percentage}%`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        datalabels: {
+                            display: false
+                        }
+                    },
+                    elements: {
+                        bar: {
+                            borderRadius: 6,
+                            borderWidth: 0
+                        },
+                        line: {
+                            tension: 0.3,
+                            borderWidth: 3,
+                            fill: false
+                        },
+                        point: {
+                            radius: 5,
+                            hoverRadius: 7
+                        }
+                    }
+                }
+            });
+        }
+
+        // Switch chart type
+        function switchChartType(type) {
+            chartType = type;
+            renderChart();
+            
+            // Update button styles
+            if (type === 'bar') {
+                barChartBtn.classList.add('bg-indigo-600', 'text-white');
+                barChartBtn.classList.remove('bg-indigo-100', 'text-indigo-700');
+                lineChartBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+                lineChartBtn.classList.remove('bg-indigo-600', 'text-white');
+            } else {
+                lineChartBtn.classList.add('bg-indigo-600', 'text-white');
+                lineChartBtn.classList.remove('bg-indigo-100', 'text-indigo-700');
+                barChartBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+                barChartBtn.classList.remove('bg-indigo-600', 'text-white');
+            }
+        }
+
+        // Save investments to localStorage
+        function saveInvestments() {
+            localStorage.setItem('investments', JSON.stringify(investments));
+        }
+
+        // Format number input with thousand separators
+        function formatNumberInput(input) {
+            // Get the current value and remove non-digit characters
+            let value = input.value.replace(/[^\d]/g, '');
+            
+            // Add thousand separators
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            
+            // Update the input value
+            input.value = value;
+        }
+
+        // Convert formatted string to number
+        function parseFormattedNumber(formattedNumber) {
+            return parseFloat(formattedNumber.replace(/\./g, '')) || 0;
+        }
+
+        // Handle form submission (updated to use parseFormattedNumber)
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const companyName = document.getElementById('companyName').value;
+            const initialInvestment = parseFormattedNumber(document.getElementById('initialInvestment').value);
+            const currentValue = parseFormattedNumber(document.getElementById('currentValue').value);
+            
+            const now = new Date();
+            const dateAdded = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            
+            const newInvestment = {
+                id: Date.now(),
+                companyName,
+                initialInvestment,
+                currentValue,
+                dateAdded
+            };
+            
+            investments.push(newInvestment);
+            saveInvestments();
+            renderInvestments();
+            updatePerformanceIndicators();
+            renderChart();
+            
+            // Reset form
+            form.reset();
+        }
+
+        // Handle edit form submission (updated to use parseFormattedNumber)
+        function handleEditFormSubmit(e) {
+            e.preventDefault();
+            
+            const id = parseInt(document.getElementById('editId').value);
+            const companyName = document.getElementById('editCompanyName').value;
+            const initialInvestment = parseFormattedNumber(document.getElementById('editInitialInvestment').value);
+            const currentValue = parseFormattedNumber(document.getElementById('editCurrentValue').value);
+            
+            const index = investments.findIndex(inv => inv.id === id);
+            if (index !== -1) {
+                investments[index] = {
+                    ...investments[index],
+                    companyName,
+                    initialInvestment,
+                    currentValue
+                };
+                
+                saveInvestments();
+                renderInvestments();
+                updatePerformanceIndicators();
+                renderChart();
+                closeEditModal();
+            }
+        }
+
+        // Update chart configuration with zoom and additional annotations
+        function renderChart() {
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            if (investments.length === 0) {
+                performanceChartEl.style.display = 'none';
+                return;
+            }
+
+            performanceChartEl.style.display = 'block';
+            
+            const companyNames = investments.map(inv => inv.companyName);
+            const initialValues = investments.map(inv => inv.initialInvestment);
+            const currentValues = investments.map(inv => inv.currentValue);
+            const performancePercentages = investments.map(inv => 
+                ((inv.currentValue - inv.initialInvestment) / inv.initialInvestment) * 100
+            );
+
+            const backgroundColors = performancePercentages.map(p => 
+                p > 0 ? 'rgba(16, 185, 129, 0.2)' : p < 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 114, 128, 0.2)'
+            );
+
+            const borderColors = performancePercentages.map(p => 
+                p > 0 ? 'rgba(16, 185, 129, 1)' : p < 0 ? 'rgba(239, 68, 68, 1)' : 'rgba(107, 114, 128, 1)'
+            );
+
+            const datasets = [];
+            
+            if (chartType === 'bar') {
+                datasets.push({
+                    label: 'Initial Investment',
+                    data: initialValues,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 1
+                });
+                
+                datasets.push({
+                    label: 'Current Value',
+                    data: currentValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                });
+            } else {
+                datasets.push({
+                    label: 'Performance %',
+                    data: performancePercentages,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    datalabels: {
+                        align: 'end',
+                        anchor: 'end',
+                        formatter: (value) => value.toFixed(2) + '%',
+                        color: borderColors
+                    }
+                });
+            }
+
+
+            performanceChart = new Chart(performanceChartEl, {
+                type: chartType,
+                data: {
+                    labels: companyNames,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: investments.map((inv, index) => ({
+                                type: 'line',
+                                mode: 'vertical',
+                                scaleID: 'x',
+                                value: index,
+                                borderColor: '#c8c8c8',
+                                borderWidth: 1,
+                                borderDash: [6, 6],
+                                label: {
+                                    content: inv.companyName,
+                                    enabled: true,
+                                    position: 'top',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                                    color: '#fff',
+                                    font: {
+                                        weight: 'bold'
+                                    }
+                                }
+                            }))
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'xy',
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            bodyColor: '#fff',
+                            titleColor: '#fff',
+                            titleFont: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (chartType === 'bar') {
+                                        label += 'Rp' + context.raw.toLocaleString('id-ID');
+                                    } else {
+                                        label += context.raw.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                },
+                                afterLabel: function(context) {
+                                    if (chartType === 'bar') {
+                                        const inv = investments[context.dataIndex];
+                                        const change = inv.currentValue - inv.initialInvestment;
+                                        const percentage = (change / inv.initialInvestment * 100).toFixed(2);
+                                        return [
+                                            `Change: ${change > 0 ? '+' : ''}Rp${change.toLocaleString('id-ID')}`,
+                                            `Performance: ${percentage}%`
+                                        ];
+                                    } else {
+                                        const inv = investments[context.dataIndex];
+                                        const change = inv.currentValue - inv.initialInvestment;
+                                        const percentage = (change / inv.initialInvestment * 100).toFixed(2);
+                                        return [
+                                            `P&L: ${change > 0 ? '+' : ''}Rp${change.toLocaleString('id-ID')}`,
+                                            `Awal: Rp${inv.initialInvestment.toLocaleString('id-ID')}`,
+                                            `Saat ini: Rp${inv.currentValue.toLocaleString('id-ID')}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                    },
+                    elements: {
+                        bar: {
+                            borderRadius: 6,
+                            borderWidth: 0
+                        },
+                        line: {
+                            tension: 0.3,
+                            borderWidth: 3,
+                            fill: false
+                        },
+                        point: {
+                            radius: 5,
+                            hoverRadius: 7
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: chartType === 'bar',
+                            title: {
+                                display: true,
+                                text: chartType === 'bar' ? 'Amount (Rp)' : 'Performance (%)',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Make functions available globally
+        window.deleteInvestment = deleteInvestment;
+        window.editInvestment = editInvestment;
+        window.formatNumberInput = formatNumberInput;
+    </script>
+</body>
+</html>
